@@ -1,0 +1,81 @@
+# Kubernetes API version that defines the schema for Ingress resources
+apiVersion: networking.k8s.io/v1
+
+# Type of Kubernetes object being created
+kind: Ingress
+
+# Metadata about the Ingress object
+metadata:
+  # Name of the Ingress resource inside the cluster
+  name: go-web-app
+
+  # Additional configuration read by the Ingress Controller
+  annotations:
+    # Tells NGINX to rewrite incoming request paths to "/"
+    # Example:
+    #   Request:  go-web-app.local/products
+    #   Forwarded: /
+    nginx.ingress.kubernetes.io/rewrite-target: /
+
+# Desired configuration of the Ingress
+spec:
+  # Specifies which Ingress Controller should manage this Ingress
+  # In this case, the NGINX Ingress Controller
+  ingressClassName: nginx
+
+  # List of routing rules
+  rules:
+    # Match requests for this hostname
+    - host: go-web-app.local
+
+      # HTTP routing rules for this host
+      http:
+        # List of path-based routing rules
+        paths:
+          # Match requests whose URL path starts with "/"
+          - path: /
+
+            # Prefix means:
+            #   /         -> match
+            #   /api      -> match
+            #   /users    -> match
+            #   /anything -> match
+            pathType: Prefix
+
+            # Destination for matched traffic
+            backend:
+              # Send traffic to a Kubernetes Service
+              service:
+                # Name of the Service that receives traffic
+                # This Service must already exist
+                name: go-web-app
+
+                # Service port to forward requests to
+                port:
+                  # Send traffic to port 80 on the Service
+                  number: 80
+
+
+
+
+# User Browser
+#       |
+#       | http://go-web-app.local/
+#       v
+# +-----------------------+
+# | NGINX Ingress         |
+# +-----------------------+
+#       |
+#       | Host matches:
+#       | go-web-app.local
+#       v
+# +-----------------------+
+# | Service: go-web-app   |
+# | Port: 80             |
+# +-----------------------+
+#       |
+#       v
+# +-----------------------+
+# | Pod(s) running        |
+# | Go Web Application    |
+# +-----------------------+
